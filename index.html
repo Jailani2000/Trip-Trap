@@ -100,6 +100,38 @@
   .next-btn:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(255,107,53,0.5); }
   .next-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
   /* Bomb */
+  /* Bomb scene */
+  .bomb-scene {
+    position: relative; height: 100px; margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .thrower { font-size: 2.8rem; position: absolute; left: 0; animation: throwerShake 0.5s 0.2s ease; }
+  @keyframes throwerShake {
+    0%,100%{transform:rotate(0)} 25%{transform:rotate(-20deg)} 75%{transform:rotate(10deg)}
+  }
+  .bomb-fly {
+    font-size: 2.2rem; position: absolute; left: 50px; top: 20px;
+    opacity: 0; transition: none;
+  }
+  .bomb-fly.flying {
+    animation: flyArc 0.9s cubic-bezier(.17,.67,.83,.67) forwards;
+    opacity: 1;
+  }
+  @keyframes flyArc {
+    0%   { transform: translate(0px, 0px) rotate(0deg); opacity:1; }
+    40%  { transform: translate(80px, -50px) rotate(180deg); opacity:1; }
+    100% { transform: translate(180px, 20px) rotate(360deg); opacity:0; }
+  }
+  .explosion {
+    font-size: 3.5rem; position: absolute; right: 10px;
+    opacity: 0; transform: scale(0.3);
+    transition: transform 0.3s cubic-bezier(.68,-0.55,.27,1.55), opacity 0.2s;
+  }
+  .explosion.exploding { transform: scale(1.4); }
+  .user-hit { font-size: 2.2rem; position: absolute; right: 0; animation: hitShake 0.4s 1s ease; }
+  @keyframes hitShake {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 60%{transform:translateX(8px)}
+  }
   .bomb-screen { text-align:center; }
   .bomb-gif { font-size:5rem; display:block; animation:shake 0.3s infinite; }
   @keyframes shake { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
@@ -147,12 +179,23 @@
   }
   .name-input:focus { border-color:var(--accent); background:white; box-shadow:0 0 0 4px rgba(255,107,53,0.1); }
   .name-input::placeholder { color:#ccc; font-weight:600; }
+  /* Toast popup */
+  .toast {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: #1a1a2e; color: white; padding: 14px 24px;
+    border-radius: 50px; font-family: 'Fredoka One', cursive; font-size: 1.1rem;
+    z-index: 9999; white-space: nowrap; box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    transition: transform 0.4s cubic-bezier(.68,-0.55,.27,1.55), opacity 0.3s;
+    opacity: 0;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 </style>
 </head>
 <body>
 <div class="progress-bar-wrap"><div class="progress-bar" id="bar"></div></div>
 <div class="step-counter" id="stepCounter"></div>
 <div class="card" id="card"></div>
+<div class="toast" id="toast"></div>
 
 <script>
 const state = { step: 0, answers: {} };
@@ -245,14 +288,30 @@ function render() {
     setBar(15);
     card.innerHTML = `
       <div class="bomb-screen">
-        <span class="bomb-gif">💣</span>
+        <div class="bomb-scene">
+          <div class="thrower">🦸</div>
+          <div class="bomb-fly" id="bombFly">💣</div>
+          <div class="explosion" id="explosion">💥</div>
+          <div class="user-hit">🫵😱</div>
+        </div>
         <div class="bomb-title">BOOM! 💥</div>
         <div class="bomb-sub">You just blew up the friendship.<br>We are coming for you... 😤</div>
         <div style="font-size:2.5rem;margin:10px 0 20px">🧨🔥😤🤌💢</div>
         <p style="font-weight:700;color:#aaa;margin-bottom:20px;font-size:0.9rem">okay fine we will forgive you IF you reconsider 👇</p>
         <button class="try-again-btn" onclick="startOver()">😭 Okay Fine, I will Come</button>
       </div>`;
-    reAnimate(); return;
+    reAnimate();
+    // trigger animation
+    setTimeout(() => {
+      const b = document.getElementById('bombFly');
+      const e = document.getElementById('explosion');
+      if (b) b.classList.add('flying');
+      setTimeout(() => {
+        if (b) b.style.opacity = '0';
+        if (e) { e.style.opacity = '1'; e.classList.add('exploding'); }
+      }, 900);
+    }, 100);
+    return;
   }
 
   // ── CONGRATS ──────────────────────────────────────
@@ -385,7 +444,13 @@ function render() {
         <input type="range" min="1000" max="50000" step="500" value="10000" id="budgetSlider" oninput="updateBudget(this.value)">
         <div class="budget-display" id="budgetDisplay">₹10,000</div>
       </div>
-      <button class="next-btn" onclick="saveBudgetAndNext()">Sounds good! 💸</button>`;
+      <div id="slipperScene" style="display:none;position:relative;height:70px;margin:0 auto 8px;max-width:260px">
+        <span style="font-size:2.2rem;position:absolute;left:0;top:50%;transform:translateY(-50%)">😤</span>
+        <span id="slipperFly" style="font-size:2rem;position:absolute;left:50px;top:50%;transform:translateY(-50%)">🥿</span>
+        <span id="slipperTarget" style="font-size:2.2rem;position:absolute;right:0;top:50%;transform:translateY(-50%)">😬</span>
+      </div>
+      <div id="budgetWarning" style="display:none;text-align:center;color:#ff4d4d;font-weight:800;font-size:0.95rem;margin-bottom:10px">👟 Serupu pinji pogum da!! ₹4000+ venum!</div>
+      <button class="next-btn" id="nextBtn" onclick="saveBudgetAndNext()">Sounds good! 💸</button>`;
   }
 
   if (q.type === 'name') {
@@ -428,11 +493,37 @@ function goTo(n)   { state.step = n; render(); }
 function startOver() { state.step = 0; state.answers = {}; render(); }
 function startFresh() { window.location.hash = ''; state.step = 0; state.answers = {}; render(); }
 
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+const dateToasts = {
+  this_weekend: '😤 Vara mudiyathu poda!',
+  next_weekend: '🌙 Next weekend ah?? Ramzan da!',
+  '2_weeks':    '🎉 Seri polam!!',
+  next_month:   '🎉 Seri polam!!',
+  someday:      '😒 Nee varave venam da!',
+  confirm_later:'👟 Seruppu piyum da!'
+};
+
 function selectDate(val, el) {
-  state.answers.when = val;
+  const allowed = ['2_weeks', 'next_month'];
   document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('nextBtn').disabled = false;
+
+  if (allowed.includes(val)) {
+    state.answers.when = val;
+    el.classList.add('selected');
+    document.getElementById('nextBtn').disabled = false;
+  } else {
+    // Don't select, don't enable next — just roast them 😂
+    document.getElementById('nextBtn').disabled = true;
+    state.answers.when = null;
+  }
+  if (dateToasts[val]) showToast(dateToasts[val]);
 }
 function selectDest(val, el) {
   state.answers.place = val;
@@ -443,6 +534,48 @@ function selectDest(val, el) {
 function updateBudget(v) {
   state.answers.budget = v;
   document.getElementById('budgetDisplay').textContent = '₹' + Number(v).toLocaleString('en-IN');
+  const btn     = document.getElementById('nextBtn');
+  const scene   = document.getElementById('slipperScene');
+  const warning = document.getElementById('budgetWarning');
+  if (Number(v) < 4000) {
+    btn.disabled = true;
+    scene.style.display = 'block';
+    warning.style.display = 'block';
+    throwSlipper();
+  } else {
+    btn.disabled = false;
+    scene.style.display = 'none';
+    warning.style.display = 'none';
+    clearTimeout(window._slipperTimer);
+  }
+}
+
+function throwSlipper() {
+  clearTimeout(window._slipperTimer);
+  const fly = document.getElementById('slipperFly');
+  if (!fly) return;
+  // reset
+  fly.style.transition = 'none';
+  fly.style.left = '50px';
+  fly.style.top = '50%';
+  fly.style.transform = 'translateY(-50%) rotate(0deg)';
+  fly.style.opacity = '1';
+  void fly.offsetWidth;
+  // animate across
+  fly.style.transition = 'left 0.8s ease-in, transform 0.8s linear, opacity 0.15s 0.7s';
+  fly.style.left = '200px';
+  fly.style.transform = 'translateY(-50%) rotate(720deg)';
+  fly.style.opacity = '0';
+  // shake target on hit
+  const target = document.getElementById('slipperTarget');
+  window._slipperTimer = setTimeout(() => {
+    if (target) {
+      target.textContent = '😵';
+      setTimeout(() => { if (target) target.textContent = '😬'; }, 400);
+    }
+    // loop if still on this page
+    if (document.getElementById('slipperFly')) throwSlipper();
+  }, 850);
 }
 function saveBudgetAndNext() {
   state.answers.budget = document.getElementById('budgetSlider').value;
