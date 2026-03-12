@@ -342,7 +342,11 @@ function render() {
   sc.textContent = (state.step + 1) + ' / ' + total;
   setBar((state.step / total) * 100);
 
-  let inner = `<span class="emoji-big">${q.emoji}</span>
+  const visual = q.id === 'going'
+    ? `<img src="https://i.postimg.cc/90C1vs71/Screenshot-2026-03-13-01-48-51-421-com-google-android-googlequicksearchbox.png" style="width:200px;height:200px;object-fit:cover;border-radius:20px;margin:0 auto 14px;display:block;box-shadow:0 4px 16px rgba(0,0,0,0.15)">`
+    : `<span class="emoji-big">${q.emoji}</span>`;
+
+  let inner = `${visual}
     <div class="question">${q.q}</div>
     <div class="sub">${q.sub}</div>`;
 
