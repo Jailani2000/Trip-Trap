@@ -139,6 +139,14 @@
   /* Confetti */
   .confetti-piece { position:fixed; border-radius:2px; pointer-events:none; animation:fall linear forwards; z-index:999; }
   @keyframes fall { 0%{transform:translateY(-40px) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+  .name-input {
+    width:100%; padding:16px 20px; border:3px solid #eee; border-radius:16px;
+    font-family:'Nunito',sans-serif; font-size:1.2rem; font-weight:800;
+    color:var(--dark); background:#f7f7f7; outline:none; text-align:center;
+    transition:all 0.2s; margin-bottom:4px;
+  }
+  .name-input:focus { border-color:var(--accent); background:white; box-shadow:0 0 0 4px rgba(255,107,53,0.1); }
+  .name-input::placeholder { color:#ccc; font-weight:600; }
 </style>
 </head>
 <body>
@@ -153,6 +161,12 @@ const placeMap = { beach:'Beach 🏖️', mountains:'Mountains ⛰️', city:'Ci
 const whenMap  = { this_weekend:'This Weekend 🌤️', next_weekend:'Next Weekend 🌈', '2_weeks':'In 2 Weeks 📆', next_month:'Next Month 🗓️', someday:'Someday 🙈', confirm_later:'Will confirm later 😅' };
 
 const questions = [
+  {
+    id:'name', emoji:'🕵️',
+    q:'யாரா நீ? 👀',
+    sub:'Enna solre... first your name sollu da! 😂',
+    type:'name'
+  },
   {
     id:'going', emoji:'✈️',
     q:'Will you come on a trip with us?? 👀',
@@ -246,13 +260,14 @@ function render() {
     sc.textContent = 'Woohoo! 🎊';
     setBar(25);
     launchConfetti(20);
+    const name = state.answers.name || 'Macha';
     card.innerHTML = `
       <div style="text-align:center">
         <div style="font-size:4rem;animation:bounce 0.8s infinite">🎉</div>
         <div style="font-size:3rem;margin:8px 0">🥳🎊🎈</div>
-        <div class="question" style="margin-bottom:10px">YESSS!! YOU ARE IN!!</div>
+        <div class="question" style="margin-bottom:10px">${name} is IN!! 🔥</div>
         <p style="color:#888;font-weight:700;margin-bottom:28px">Squad is officially complete 👏<br>Now answer a few more things...</p>
-        <button class="next-btn" onclick="goTo(1)">Let's Plan This Trip! 🚀</button>
+        <button class="next-btn" onclick="goTo(2)">Let's Plan This Trip! 🚀</button>
       </div>`;
     reAnimate(); return;
   }
@@ -276,6 +291,7 @@ function render() {
         <div class="final-title">WE ARE SO GOING!! 🎉🎉</div>
         <div class="final-sub">Locked in. No escape now 😈</div>
         <div class="summary">
+          <div class="summary-row"><span class="summary-key">Name</span> 🙋 ${a.name || 'Unknown'}</div>
           <div class="summary-row"><span class="summary-key">Going?</span> ✅ Absolutely YES!</div>
           <div class="summary-row"><span class="summary-key">When</span> ${whenMap[a.when]  || a.when}</div>
           <div class="summary-row"><span class="summary-key">Where</span> ${placeMap[a.place] || a.place}</div>
@@ -308,6 +324,7 @@ function render() {
         <div class="final-title">Friend's Trip Answers 🧳</div>
         <div class="final-sub">Here is what they filled in 👇</div>
         <div class="summary">
+          <div class="summary-row"><span class="summary-key">Name</span> 🙋 ${a.name || 'Unknown'}</div>
           <div class="summary-row"><span class="summary-key">Going?</span> ✅ YES!</div>
           <div class="summary-row"><span class="summary-key">When</span> ${whenMap[a.when]   || a.when}</div>
           <div class="summary-row"><span class="summary-key">Where</span> ${placeMap[a.place] || a.place}</div>
@@ -367,6 +384,12 @@ function render() {
       <button class="next-btn" onclick="saveBudgetAndNext()">Sounds good! 💸</button>`;
   }
 
+  if (q.type === 'name') {
+    inner += `
+      <input class="name-input" id="nameInput" type="text" placeholder="Ungal peyar sollunga da... 😏" maxlength="30" oninput="checkName()" onkeydown="if(event.key==='Enter') submitName()" />
+      <button class="next-btn" id="nextBtn" disabled onclick="submitName()">Seri da! 👋</button>`;
+  }
+
   if (q.type === 'vibe') {
     inner += '<div class="vibe-grid">';
     q.options.forEach(o => {
@@ -382,6 +405,16 @@ function render() {
 }
 
 // ── HANDLERS ──────────────────────────────────────────
+function checkName() {
+  const val = document.getElementById('nameInput').value.trim();
+  document.getElementById('nextBtn').disabled = val.length === 0;
+}
+function submitName() {
+  const val = document.getElementById('nameInput').value.trim();
+  if (!val) return;
+  state.answers.name = val;
+  nextStep();
+}
 function answerYesNo(val) {
   if (val === 'yes') { state.answers.going = 'yes'; state.step = 'congrats'; }
   else { state.step = 'bomb'; }
@@ -478,5 +511,3 @@ render();
 </script>
 </body>
 </html>
-
-
