@@ -1,1 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trip Trap!</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fff9f0; --card: #ffffff; --accent: #ff6b35;
+    --accent2: #ffd166; --accent3: #06d6a0; --accent4: #118ab2;
+    --dark: #1a1a2e; --shadow: 0 8px 40px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif; background: var(--bg);
+    min-height: 100vh; display: flex; align-items: center;
+    justify-content: center; overflow: hidden; position: relative;
+  }
+  body::before {
+    content: ''; position: fixed; width: 600px; height: 600px;
+    background: radial-gradient(circle, #ffd16640 0%, transparent 70%);
+    top: -200px; left: -200px; pointer-events: none;
+  }
+  body::after {
+    content: ''; position: fixed; width: 500px; height: 500px;
+    background: radial-gradient(circle, #06d6a040 0%, transparent 70%);
+    bottom: -200px; right: -200px; pointer-events: none;
+  }
+  .progress-bar-wrap { position: fixed; top: 0; left: 0; right: 0; height: 6px; background: #eee; z-index: 100; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg,#ff6b35,#ffd166,#06d6a0); transition: width 0.5s cubic-bezier(.68,-0.55,.27,1.55); width: 0%; }
+  .step-counter { position: fixed; top: 18px; right: 20px; font-family: 'Fredoka One', cursive; font-size: 1rem; color: #aaa; z-index: 100; }
+  .card {
+    background: var(--card); border-radius: 28px; padding: 48px 44px 40px;
+    width: 92%; max-width: 540px; box-shadow: var(--shadow);
+    animation: popIn 0.5s cubic-bezier(.68,-0.55,.27,1.55);
+  }
+  @keyframes popIn { from { opacity:0; transform:scale(0.7) translateY(30px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  .emoji-big { font-size: 3.5rem; display: block; text-align: center; margin-bottom: 14px; animation: bounce 1.2s infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  .question { font-family: 'Fredoka One', cursive; font-size: 1.7rem; color: var(--dark); text-align: center; line-height: 1.3; margin-bottom: 10px; }
+  .sub { text-align: center; color: #888; font-size: 0.95rem; margin-bottom: 30px; font-weight: 600; }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .opt-btn {
+    border: 3px solid transparent; border-radius: 16px; padding: 14px 20px;
+    font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 800;
+    cursor: pointer; transition: all 0.2s ease; text-align: left;
+    display: flex; align-items: center; gap: 12px;
+    background: #f7f7f7; color: var(--dark);
+  }
+  .opt-btn:hover { transform: translateX(6px) scale(1.02); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+  .opt-btn.yes-btn { background:#fff0ea; border-color:#ff6b35; }
+  .opt-btn.yes-btn:hover { background:#ff6b35; color:white; }
+  .opt-btn.no-btn  { background:#fff3f3; border-color:#ff4d4d; }
+  .opt-btn.no-btn:hover  { background:#ff4d4d; color:white; }
+  .opt-emoji { font-size: 1.4rem; }
+  .date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .date-btn {
+    border: 3px solid #eee; border-radius: 14px; padding: 14px 10px;
+    font-family: 'Nunito', sans-serif; font-size: 0.9rem; font-weight: 800;
+    cursor: pointer; background: #f7f7f7; color: var(--dark);
+    text-align: center; transition: all 0.2s ease;
+  }
+  .date-btn:hover, .date-btn.selected { background: var(--accent2); border-color: var(--accent2); transform: scale(1.04); }
+  .dest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dest-btn {
+    border: 3px solid #eee; border-radius: 16px; padding: 16px 10px;
+    font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 800;
+    cursor: pointer; background: #f7f7f7; color: var(--dark);
+    text-align: center; transition: all 0.2s ease;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .d-emoji { font-size: 2rem; }
+  .dest-btn:hover { transform:scale(1.06); background:var(--accent2); border-color:var(--accent2); }
+  .dest-btn.selected { background:var(--accent3); border-color:var(--accent3); color:white; transform:scale(1.06); }
+  .slider-wrap { padding: 10px 0 20px; }
+  .slider-label { display:flex; justify-content:space-between; font-weight:800; color:#555; margin-bottom:10px; font-size:0.9rem; }
+  input[type=range] { width:100%; accent-color:var(--accent); height:8px; border-radius:4px; cursor:pointer; }
+  .budget-display { text-align:center; font-family:'Fredoka One',cursive; font-size:2.2rem; color:var(--accent); margin-top:14px; }
+  .vibe-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  .vibe-btn {
+    border: 3px solid #eee; border-radius: 14px; padding: 12px 8px;
+    font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 800;
+    cursor: pointer; background: #f7f7f7; color: var(--dark);
+    text-align: center; transition: all 0.2s ease;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+  }
+  .v-emoji { font-size: 1.6rem; }
+  .vibe-btn:hover { transform:scale(1.05); }
+  .vibe-btn.selected { background:var(--accent4); border-color:var(--accent4); color:white; transform:scale(1.05); }
+  .next-btn {
+    margin-top: 28px; width: 100%; padding: 16px;
+    background: linear-gradient(135deg,var(--accent),#ff9f1c);
+    border: none; border-radius: 16px;
+    font-family: 'Fredoka One',cursive; font-size: 1.3rem;
+    color: white; cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(255,107,53,0.4);
+  }
+  .next-btn:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(255,107,53,0.5); }
+  .next-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+  /* Bomb */
+  .bomb-screen { text-align:center; }
+  .bomb-gif { font-size:5rem; display:block; animation:shake 0.3s infinite; }
+  @keyframes shake { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+  .bomb-title { font-family:'Fredoka One',cursive; font-size:2rem; color:#ff4d4d; margin:16px 0 10px; }
+  .bomb-sub { color:#888; font-size:1rem; font-weight:700; margin-bottom:24px; }
+  .try-again-btn {
+    padding:14px 32px; background:#ff4d4d; border:none; border-radius:14px;
+    font-family:'Fredoka One',cursive; font-size:1.2rem; color:white; cursor:pointer; transition:transform 0.2s;
+  }
+  .try-again-btn:hover { transform:scale(1.05); }
+  /* Final */
+  .final-screen { text-align:center; }
+  .fireworks { font-size:3.5rem; animation:spin 2s linear infinite; display:inline-block; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  .final-title { font-family:'Fredoka One',cursive; font-size:2rem; color:var(--dark); margin:16px 0 8px; }
+  .final-sub { color:#666; font-weight:700; font-size:1rem; margin-bottom:24px; }
+  .summary { background:#f7f7f7; border-radius:16px; padding:18px 20px; text-align:left; margin-bottom:20px; }
+  .summary-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px dashed #eee; font-weight:700; font-size:0.95rem; color:#444; }
+  .summary-row:last-child { border-bottom:none; }
+  .summary-key { color:#aaa; font-size:0.85rem; min-width:100px; }
+  /* Share box */
+  .share-box { background:linear-gradient(135deg,#fff0ea,#fff9f0); border:2px dashed var(--accent); border-radius:16px; padding:18px 16px; text-align:left; }
+  .share-label { font-family:'Fredoka One',cursive; font-size:1rem; color:var(--accent); margin-bottom:10px; }
+  .share-url-wrap { display:flex; gap:8px; margin-bottom:8px; }
+  .share-url-input {
+    flex:1; padding:10px 12px; border:2px solid #eee; border-radius:10px;
+    font-size:0.78rem; font-family:monospace; color:#555; background:white;
+    outline:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .copy-btn {
+    padding:10px 16px; background:var(--accent); border:none; border-radius:10px;
+    font-family:'Fredoka One',cursive; font-size:0.95rem; color:white; cursor:pointer;
+    white-space:nowrap; transition:all 0.2s; flex-shrink:0;
+  }
+  .copy-btn:hover { background:#e55a25; transform:scale(1.05); }
+  .share-hint { font-size:0.8rem; color:#aaa; font-weight:700; }
+  /* Confetti */
+  .confetti-piece { position:fixed; border-radius:2px; pointer-events:none; animation:fall linear forwards; z-index:999; }
+  @keyframes fall { 0%{transform:translateY(-40px) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+</style>
+</head>
+<body>
+<div class="progress-bar-wrap"><div class="progress-bar" id="bar"></div></div>
+<div class="step-counter" id="stepCounter"></div>
+<div class="card" id="card"></div>
+
+<script>
+const state = { step: 0, answers: {} };
+
+const placeMap = { beach:'Beach 🏖️', mountains:'Mountains ⛰️', city:'City Trip 🏙️', jungle:'Jungle 🌿', desert:'Desert 🏜️', surprise:'Surprise Me 🎁' };
+const whenMap  = { this_weekend:'This Weekend 🌤️', next_weekend:'Next Weekend 🌈', '2_weeks':'In 2 Weeks 📆', next_month:'Next Month 🗓️', someday:'Someday 🙈', confirm_later:'Will confirm later 😅' };
+
+const questions = [
+  {
+    id:'going', emoji:'✈️',
+    q:'Will you come on a trip with us?? 👀',
+    sub:'Choose wisely. Your life depends on it. (jk... or does it? 👀)',
+    type:'yesno',
+    options:[
+      { label:"YESSSS! Let's GOOO! 🎉", emoji:'🥳', val:'yes', cls:'yes-btn' },
+      { label:"Nah I'm busy 😴",         emoji:'💤', val:'no',  cls:'no-btn'  },
+    ]
+  },
+  {
+    id:'when', emoji:'📅',
+    q:"When are you free, oh busy one?",
+    sub:"Pick one (we know you're free all the time 😏)",
+    type:'date',
+    options:[
+      { label:'This Weekend 🌤️',       val:'this_weekend'  },
+      { label:'Next Weekend 🌈',        val:'next_weekend'  },
+      { label:'In 2 Weeks 📆',          val:'2_weeks'       },
+      { label:'Next Month 🗓️',          val:'next_month'    },
+      { label:'Someday... 🙈',          val:'someday'       },
+      { label:'Will confirm later 😅',  val:'confirm_later' },
+    ]
+  },
+  {
+    id:'place', emoji:'🗺️',
+    q:'Where do you wanna go?!',
+    sub:'Your wish is our command (maybe)',
+    type:'destination',
+    options:[
+      { label:'Beach 🏖️',      emoji:'🏖️', val:'beach'     },
+      { label:'Mountains ⛰️',  emoji:'⛰️', val:'mountains' },
+      { label:'City Trip 🏙️',  emoji:'🏙️', val:'city'      },
+      { label:'Jungle 🌿',     emoji:'🌿', val:'jungle'    },
+      { label:'Desert 🏜️',     emoji:'🏜️', val:'desert'    },
+      { label:'Surprise Me 🎁',emoji:'🎁', val:'surprise'  },
+    ]
+  },
+  {
+    id:'budget', emoji:'💰',
+    q:"What's your budget, big spender?",
+    sub:"Be honest... we're watching you 👀",
+    type:'slider'
+  },
+  {
+    id:'vibe', emoji:'🎭',
+    q:"What's your trip vibe?",
+    sub:'Pick all that apply (no judgment... much 😂)',
+    type:'vibe',
+    options:[
+      { label:'Party 🥂',     emoji:'🥂', val:'party'     },
+      { label:'Chill 😎',     emoji:'😎', val:'chill'     },
+      { label:'Adventure 🧗', emoji:'🧗', val:'adventure' },
+      { label:'Foodie 🍜',    emoji:'🍜', val:'foodie'    },
+      { label:'Culture 🏛️',   emoji:'🏛️', val:'culture'   },
+      { label:'Sleep 😴',     emoji:'😴', val:'sleep'     },
+    ]
+  }
+];
+
+function setBar(pct) { document.getElementById('bar').style.width = pct + '%'; }
+
+function reAnimate() {
+  const c = document.getElementById('card');
+  c.style.animation = 'none'; void c.offsetWidth;
+  c.style.animation = 'popIn 0.5s cubic-bezier(.68,-0.55,.27,1.55)';
+}
+
+function render() {
+  const card = document.getElementById('card');
+  const sc   = document.getElementById('stepCounter');
+
+  // ── BOMB ──────────────────────────────────────────
+  if (state.step === 'bomb') {
+    sc.textContent = '';
+    setBar(15);
+    card.innerHTML = `
+      <div class="bomb-screen">
+        <span class="bomb-gif">💣</span>
+        <div class="bomb-title">BOOM! 💥</div>
+        <div class="bomb-sub">You just blew up the friendship.<br>We are coming for you... 😤</div>
+        <div style="font-size:2.5rem;margin:10px 0 20px">🧨🔥😤🤌💢</div>
+        <p style="font-weight:700;color:#aaa;margin-bottom:20px;font-size:0.9rem">okay fine we will forgive you IF you reconsider 👇</p>
+        <button class="try-again-btn" onclick="startOver()">😭 Okay Fine, I will Come</button>
+      </div>`;
+    reAnimate(); return;
+  }
+
+  // ── CONGRATS ──────────────────────────────────────
+  if (state.step === 'congrats') {
+    sc.textContent = 'Woohoo! 🎊';
+    setBar(25);
+    launchConfetti(20);
+    card.innerHTML = `
+      <div style="text-align:center">
+        <div style="font-size:4rem;animation:bounce 0.8s infinite">🎉</div>
+        <div style="font-size:3rem;margin:8px 0">🥳🎊🎈</div>
+        <div class="question" style="margin-bottom:10px">YESSS!! YOU ARE IN!!</div>
+        <p style="color:#888;font-weight:700;margin-bottom:28px">Squad is officially complete 👏<br>Now answer a few more things...</p>
+        <button class="next-btn" onclick="goTo(1)">Let's Plan This Trip! 🚀</button>
+      </div>`;
+    reAnimate(); return;
+  }
+
+  // ── DONE (after submission) ────────────────────────
+  if (state.step === 'done') {
+    sc.textContent = '';
+    setBar(100);
+    launchConfetti(60);
+    const a = state.answers;
+    const budgetLabel = a.budget ? '₹' + Number(a.budget).toLocaleString('en-IN') : '₹10,000';
+    const vibeStr     = a.vibe && a.vibe.length ? a.vibe.join(', ') : 'N/A';
+
+    // Encode all answers into the URL hash
+    const encoded  = btoa(unescape(encodeURIComponent(JSON.stringify(a))));
+    const shareURL = window.location.href.split('#')[0] + '#r=' + encoded;
+
+    card.innerHTML = `
+      <div class="final-screen">
+        <span class="fireworks">🎆</span>
+        <div class="final-title">WE ARE SO GOING!! 🎉🎉</div>
+        <div class="final-sub">Locked in. No escape now 😈</div>
+        <div class="summary">
+          <div class="summary-row"><span class="summary-key">Going?</span> ✅ Absolutely YES!</div>
+          <div class="summary-row"><span class="summary-key">When</span> ${whenMap[a.when]  || a.when}</div>
+          <div class="summary-row"><span class="summary-key">Where</span> ${placeMap[a.place] || a.place}</div>
+          <div class="summary-row"><span class="summary-key">Budget</span> ${budgetLabel}</div>
+          <div class="summary-row"><span class="summary-key">Vibe</span> ${vibeStr}</div>
+        </div>
+        <div class="share-box">
+          <div class="share-label">📤 Send this link to your trip organiser!</div>
+          <div class="share-url-wrap">
+            <input class="share-url-input" id="shareInput" type="text" readonly value="${shareURL}" />
+            <button class="copy-btn" id="copyBtn" onclick="copyLink()">Copy 📋</button>
+          </div>
+          <p class="share-hint">All your answers are baked into this link 🍰 — just copy &amp; send to your group!</p>
+        </div>
+      </div>`;
+    reAnimate(); return;
+  }
+
+  // ── VIEW MODE (organiser opens result link) ────────
+  if (state.step === 'view') {
+    sc.textContent = '👀 Result';
+    setBar(100);
+    launchConfetti(30);
+    const a = state.viewData;
+    const budgetLabel = a.budget ? '₹' + Number(a.budget).toLocaleString('en-IN') : '₹10,000';
+    const vibeStr     = a.vibe && a.vibe.length ? a.vibe.join(', ') : 'N/A';
+    card.innerHTML = `
+      <div class="final-screen">
+        <div style="font-size:3rem;margin-bottom:8px">📋</div>
+        <div class="final-title">Friend's Trip Answers 🧳</div>
+        <div class="final-sub">Here is what they filled in 👇</div>
+        <div class="summary">
+          <div class="summary-row"><span class="summary-key">Going?</span> ✅ YES!</div>
+          <div class="summary-row"><span class="summary-key">When</span> ${whenMap[a.when]   || a.when}</div>
+          <div class="summary-row"><span class="summary-key">Where</span> ${placeMap[a.place] || a.place}</div>
+          <div class="summary-row"><span class="summary-key">Budget</span> ${budgetLabel}</div>
+          <div class="summary-row"><span class="summary-key">Vibe</span> ${vibeStr}</div>
+        </div>
+        <button class="next-btn" style="margin-top:4px" onclick="startFresh()">Send to another friend 🚀</button>
+      </div>`;
+    reAnimate(); return;
+  }
+
+  // ── NORMAL QUESTIONS ──────────────────────────────
+  const total = questions.length;
+  const q     = questions[state.step];
+  sc.textContent = (state.step + 1) + ' / ' + total;
+  setBar((state.step / total) * 100);
+
+  let inner = `<span class="emoji-big">${q.emoji}</span>
+    <div class="question">${q.q}</div>
+    <div class="sub">${q.sub}</div>`;
+
+  if (q.type === 'yesno') {
+    inner += '<div class="options">';
+    q.options.forEach(o => {
+      inner += `<button class="opt-btn ${o.cls}" onclick="answerYesNo('${o.val}')">
+        <span class="opt-emoji">${o.emoji}</span>${o.label}</button>`;
+    });
+    inner += '</div>';
+  }
+
+  if (q.type === 'date') {
+    inner += '<div class="date-grid">';
+    q.options.forEach(o => {
+      inner += `<button class="date-btn" onclick="selectDate('${o.val}',this)">${o.label}</button>`;
+    });
+    inner += '</div>';
+    inner += '<button class="next-btn" id="nextBtn" disabled onclick="nextStep()">Next ➜</button>';
+  }
+
+  if (q.type === 'destination') {
+    inner += '<div class="dest-grid">';
+    q.options.forEach(o => {
+      inner += `<button class="dest-btn" onclick="selectDest('${o.val}',this)">
+        <span class="d-emoji">${o.emoji}</span>${o.label}</button>`;
+    });
+    inner += '</div>';
+    inner += '<button class="next-btn" id="nextBtn" disabled onclick="nextStep()">Next ➜</button>';
+  }
+
+  if (q.type === 'slider') {
+    inner += `
+      <div class="slider-wrap">
+        <div class="slider-label"><span>₹1,000</span><span>₹50,000</span></div>
+        <input type="range" min="1000" max="50000" step="500" value="10000" id="budgetSlider" oninput="updateBudget(this.value)">
+        <div class="budget-display" id="budgetDisplay">₹10,000</div>
+      </div>
+      <button class="next-btn" onclick="saveBudgetAndNext()">Sounds good! 💸</button>`;
+  }
+
+  if (q.type === 'vibe') {
+    inner += '<div class="vibe-grid">';
+    q.options.forEach(o => {
+      inner += `<button class="vibe-btn" onclick="toggleVibe('${o.val}',this)">
+        <span class="v-emoji">${o.emoji}</span>${o.label}</button>`;
+    });
+    inner += '</div>';
+    inner += '<button class="next-btn" id="nextBtn" disabled onclick="finishForm()">I\'m READY! 🚀</button>';
+  }
+
+  card.innerHTML = inner;
+  reAnimate();
+}
+
+// ── HANDLERS ──────────────────────────────────────────
+function answerYesNo(val) {
+  if (val === 'yes') { state.answers.going = 'yes'; state.step = 'congrats'; }
+  else { state.step = 'bomb'; }
+  render();
+}
+function goTo(n)   { state.step = n; render(); }
+function startOver() { state.step = 0; state.answers = {}; render(); }
+function startFresh() { window.location.hash = ''; state.step = 0; state.answers = {}; render(); }
+
+function selectDate(val, el) {
+  state.answers.when = val;
+  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('nextBtn').disabled = false;
+}
+function selectDest(val, el) {
+  state.answers.place = val;
+  document.querySelectorAll('.dest-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('nextBtn').disabled = false;
+}
+function updateBudget(v) {
+  state.answers.budget = v;
+  document.getElementById('budgetDisplay').textContent = '₹' + Number(v).toLocaleString('en-IN');
+}
+function saveBudgetAndNext() {
+  state.answers.budget = document.getElementById('budgetSlider').value;
+  nextStep();
+}
+
+const selectedVibes = new Set();
+function toggleVibe(val, el) {
+  if (selectedVibes.has(val)) { selectedVibes.delete(val); el.classList.remove('selected'); }
+  else                         { selectedVibes.add(val);    el.classList.add('selected');    }
+  state.answers.vibe = [...selectedVibes];
+  document.getElementById('nextBtn').disabled = selectedVibes.size === 0;
+}
+
+function nextStep() {
+  state.step++;
+  if (state.step >= questions.length) state.step = 'done';
+  render();
+}
+function finishForm() { state.step = 'done'; render(); }
+
+function copyLink() {
+  const url = document.getElementById('shareInput').value;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied! ✅';
+    btn.style.background = '#06d6a0';
+    setTimeout(() => { btn.textContent = 'Copy 📋'; btn.style.background = ''; }, 2500);
+  }).catch(() => {
+    const inp = document.getElementById('shareInput');
+    inp.select(); document.execCommand('copy');
+  });
+}
+
+// ── CONFETTI ──────────────────────────────────────────
+function launchConfetti(count) {
+  count = count || 60;
+  const colors = ['#ff6b35','#ffd166','#06d6a0','#118ab2','#ef476f','#7b2d8b'];
+  for (let i = 0; i < count; i++) {
+    setTimeout(function() {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left   = (Math.random() * 100) + 'vw';
+      el.style.top    = '-20px';
+      el.style.width  = (8  + Math.random() * 10) + 'px';
+      el.style.height = (8  + Math.random() * 10) + 'px';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.animationDuration = (2 + Math.random() * 3) + 's';
+      el.style.animationDelay   = (Math.random() * 0.5) + 's';
+      document.body.appendChild(el);
+      setTimeout(function() { el.remove(); }, 6000);
+    }, i * 30);
+  }
+}
+
+// ── INIT: check for result hash ────────────────────────
+(function() {
+  const hash = window.location.hash;
+  if (hash.startsWith('#r=')) {
+    try {
+      const encoded = hash.slice(3);
+      const data = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      state.step     = 'view';
+      state.viewData = data;
+    } catch(e) { state.step = 0; }
+  }
+})();
+
+render();
+</script>
+</body>
+</html>
+
 
