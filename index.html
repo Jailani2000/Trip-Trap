@@ -207,7 +207,7 @@ const questions = [
   {
     id:'name', emoji:'🕵️',
     q:'யாரா நீ? 👀',
-    sub:'Enna solre... first your name sollu da! 😂',
+    sub:'Enna solre... first your name solra da! 😂',
     type:'name'
   },
   {
@@ -322,8 +322,7 @@ function render() {
     const name = state.answers.name || 'Macha';
     card.innerHTML = `
       <div style="text-align:center">
-        <div style="font-size:4rem;animation:bounce 0.8s infinite">🎉</div>
-        <div style="font-size:3rem;margin:8px 0">🥳🎊🎈</div>
+        <img src="https://i.postimg.cc/G2XqMmpt/Screenshot-2026-03-13-12-37-55-097-com-google-android-youtube.png" style="width:180px;height:180px;object-fit:cover;border-radius:20px;margin:0 auto 14px;display:block;box-shadow:0 4px 16px rgba(0,0,0,0.15)">
         <div class="question" style="margin-bottom:10px">${name} is IN!! 🔥</div>
         <p style="color:#888;font-weight:700;margin-bottom:28px">Squad is officially complete 👏<br>Now answer a few more things...</p>
         <button class="next-btn" onclick="goTo(2)">Let's Plan This Trip! 🚀</button>
@@ -455,7 +454,7 @@ function render() {
 
   if (q.type === 'name') {
     inner += `
-      <input class="name-input" id="nameInput" type="text" placeholder="Ungal peyar sollunga da... 😏" maxlength="30" oninput="checkName()" onkeydown="if(event.key==='Enter') submitName()" />
+      <input class="name-input" id="nameInput" type="text" placeholder="Un per solitu token podu 😏" maxlength="30" oninput="checkName()" onkeydown="if(event.key==='Enter') submitName()" />
       <button class="next-btn" id="nextBtn" disabled onclick="submitName()">Seri da! 👋</button>`;
   }
 
